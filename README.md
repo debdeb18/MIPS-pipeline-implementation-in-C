@@ -38,6 +38,10 @@ Some provided input files:
 - simple4.bin
 
 
-## Documentation
+## Documentation and resources
 
-Report can be seen here //TODO
+1. [Report](https://docs.google.com/document/d/1UfKPNGtBblIq7WNFxUQymU0hrLvIZOQQSPnGdPN_nQg/edit)
+2. [MIPS Green Sheet](MIPS_Green_Sheet.pdf)
+3. MIPS pipeline structure
+
+![pipeline_struct](MIPS_pipeline_struct.png)
