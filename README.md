@@ -2,7 +2,6 @@
 > MIPS - CPU Emulator      
 
 > code created on spring 2021    
-> sandbox is coming soon, for live demo
 
 This repository contains final code for MIPS pipeline in C language with aim to learn about the deeper about the MIPS, processor, and memory in CPU.
 
@@ -24,10 +23,9 @@ output: terminal
 //to be updated
 
 ## Description Detail
+The program takes binary file, containing instruction in MIPS format, as input and produce output in terminal
 
-file structure could be seen from `folder structure.txt` file
-
-The program takes binary file as input and produce output shown in terminal
+A few hazard handlings is included to enhance the pipeline performance, such as by forwarding, stalling, and/or early branch resolution.
 
 Some provided input files:
 - fib.bin
