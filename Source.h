@@ -1,5 +1,5 @@
 #include <time.h>
-#define MAX_MEM 16*1024*1024/sizeof(int)
+#define MAX_MEM 0x100000
 
 //global variable
 //unsigned int PC, IR;
@@ -17,6 +17,7 @@ struct instr_info {
 typedef struct instr_info info;
 info instr_info;
 
+//lstch structure
 struct if_id_latch {
 	int pc;
 	int instruction;
@@ -61,7 +62,10 @@ struct hazardUnit {
 typedef struct hazardUnit haz_unit;
 haz_unit hu;
 
+//instruction to memory
 void load_instruction(FILE* fd);
+
+//5 stages
 void instruction_fetch(int* PCBranchD, int* PCSrcD);
 void instruction_decode(int* ALUOutM, int* PCBranchD, int* PCSrcD);
 void execution(int* ALUOutM, int* ResultW);
@@ -71,16 +75,18 @@ void write_back(int* ResultW);
 void update_clk_t();
 void clock_cycle();
 void initialize();
+int print_output();
 
+//operation function
 int mux2(int opnd1, int opnd2, int s);
 int mux3(int opnd1, int opnd2, int opnd3, int s);
 int bit(int number, int numBit, int start);
 int swap(int a);
 int check_sign_extend(unsigned int imm, int opcode);
 int check(int exp, const char* msg);
-
-int print_output();
 int ALU_calculator(int opnd1, int opnd2, int E, int control);
+
+//hazard control function
 int set_control_signal(int op, int funct);
 void hazard_det_unit();
 void stall_unit();
