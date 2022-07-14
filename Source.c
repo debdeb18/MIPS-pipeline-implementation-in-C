@@ -3,15 +3,14 @@
 #include <stdint.h>
 #include <string.h>
 #include <errno.h>
+#include <stddef.h>
 #include "Source.h"
 
-//#define MEMORY_STRUCT
-#define STAGES_CHANGE
-//#define DEBUG
+#define MEMORY_STRUCT //memory filled process
+//#define STAGES_CHANGE //iterated process
+//#define DEBUG //mips instuction decode
 
-#define filename "simple.bin"
-
-int main()
+int main(int argc, char* argv[])
 {
 	//signal that cross over the stage backward
 	int ALUOutM = 0, PCBranchD = 0, PCSrcD = 0, ResultW = 0;
@@ -19,6 +18,14 @@ int main()
 	//open file and load to memory
 	int ret;
 	FILE* file;
+	char* filename;
+
+	if(argc == 2){
+		filename = argv[1];
+	} else {
+		filename = "simple3.bin";
+	}
+
 	if ((file = fopen(filename, "rb")) == NULL) {
 		perror("cannot open file");
 		exit(1);
@@ -51,7 +58,9 @@ int main()
 		update_clk_t();
 
 		clock_cycle(); //keep track of the clock cycle
+#if defined DEBUG || defined STAGES_CHANGE
 		printf("\n");
+#endif
 	}
 
 	return 0;
@@ -71,7 +80,7 @@ void load_instruction(FILE* fd) {
 		data_memory[i] = mem_val;
 
 #ifdef MEMORY_STRUCT
-		printf("(%d) load Mem[%x] pa: 0x%x val: 0x%x\n", (int)ret, i, &data_memory[i], data_memory[i]);
+		printf("(%d) load Mem[%x] pa: 0x%p val: 0x%x\n", (int)ret, i, &data_memory[i], data_memory[i]);
 #endif
 		i++;
 	} while (ret == 4);
@@ -277,7 +286,7 @@ void memory_access(int* ALUOutM) {
 	*ALUOutM = ex_mem_l.alu_out;
 	int memWrite = bit(ex_mem_l.control_unit_m, 1, 1);
 	int memRead = bit(ex_mem_l.control_unit_m, 1, 2);
-	int read_data = NULL;
+	int read_data = 0;
 
 	//check if instruction is lw or sw or neither
 	if (memWrite == 1) {
@@ -354,8 +363,8 @@ void clock_cycle() {
 
 void initialize() {
 	memset(reg, 0, sizeof(reg));
-	reg[31] = 0xFFFFFFFF; //$31 = -1
-	reg[29] = (unsigned int*)0x1000000;
+	reg[31] = 0xFFFFFFFF; //return address #31 = -1
+	reg[29] = (unsigned int)0x400000; //stack pointer
 	return;
 }
 
@@ -432,9 +441,9 @@ int print_output() {
 	printf("executed in %d clock cycle for %f sec\n", clk, ((double)clk_t * clk / CLOCKS_PER_SEC));
 #ifdef DEBUG
 	printf("longest clock cycle is %f sec\n", (double)clk_t / CLOCKS_PER_SEC);
-	for (int i = 0; i < clk; i++) {
-		printf("clk %d = %f sec\n", i + 1, (double)temp[i + 1] / CLOCKS_PER_SEC);
-	}
+//	for (int i = 0; i < clk; i++) {
+//		printf("clk %d = %f sec\n", i + 1, (double)temp[i + 1] / CLOCKS_PER_SEC);
+//	}
 #endif
 	printf("-------------------------------------\n");
 	return 0;
@@ -452,20 +461,20 @@ int ALU_calculator(int opnd1, int opnd2, int E, int control) {
 		result = opnd1 & opnd2;
 
 #ifdef DEBUG
-		printf("and --> \n0x%x & 0x%x --> 0x%x\n", opnd1, opnd2, result);
+		printf("and --> 0x%x & 0x%x = 0x%x\n", opnd1, opnd2, result);
 #endif // DEBUG
 
 		break;
 	case 1:
 		result = opnd1 | opnd2;
 #ifdef DEBUG
-		printf("or --> \n0x%x | 0x%x --> 0x%x\n", opnd1, opnd2, result);
+		printf("or --> 0x%x | 0x%x = 0x%x\n", opnd1, opnd2, result);
 #endif // DEBUG
 		break;
 	case 2:
 		result = opnd1 + opnd2;
 #ifdef DEBUG
-		printf("add --> \n0x%x + 0x%x --> 0x%x\n", opnd1, opnd2, result);
+		printf("add --> 0x%x + 0x%x = 0x%x\n", opnd1, opnd2, result);
 #endif // DEBUG
 		break;
 	case 3:
@@ -474,25 +483,25 @@ int ALU_calculator(int opnd1, int opnd2, int E, int control) {
 	case 4:
 		result = opnd2 << E;
 #ifdef DEBUG
-		printf("shift left --> \n0x%x << %d --> 0x%x\n", opnd2, E, result);
+		printf("shift left --> 0x%x << %d = 0x%x\n", opnd2, E, result);
 #endif // DEBUG
 		break;
 	case 5:
 		result = opnd2 >> E;
 #ifdef DEBUG
-		printf("shift right --> \n0x%x >> %d --> 0x%x\n", opnd2, E, result);
+		printf("shift right --> 0x%x >> %d = 0x%x\n", opnd2, E, result);
 #endif // DEBUG
 		break;
 	case 6:
 		result = opnd1 - opnd2;
 #ifdef DEBUG
-		printf("sub --> \n0x%x - 0x%x --> 0x%x\n", opnd1, opnd2, result);
+		printf("sub --> 0x%x - 0x%x = 0x%x\n", opnd1, opnd2, result);
 #endif // DEBUG
 		break;
 	case 7:
 		result = (opnd1 < opnd2) ? 1 : 0;
 #ifdef DEBUG
-		printf("slt --> \n0x%x < 0x%x ? %x\n", opnd1, opnd2, result);
+		printf("slt --> 0x%x < 0x%x ? %x\n", opnd1, opnd2, result);
 #endif // DEBUG
 		break;
 	default:
@@ -674,11 +683,11 @@ int set_control_signal(int op, int funct) {
 			instr_info.j_type_count++;
 		}
 		else {
-			return;
+			return -1;
 		}
 	}
 #ifdef DEBUG
-	printf("instruction: %s -->\n", name);
+	printf("Operation: %s\n", name);
 #endif // DEBUG
 	return temp2;
 }
